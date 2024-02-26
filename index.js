@@ -1,14 +1,16 @@
 import express from "express";
-import redis from "redis";
+import Redis from "ioredis";
 import fetch from "node-fetch";
 
 const app = express();
 
-const client = await redis
-  .createClient()
-  .on("error", (err) => console.log("Redis Client Error", err))
-  .connect();
-client.configSet("", "");
+const client = new Redis();
+
+client.monitor((err, monitor) => {
+  monitor.on("monitor", (time, args, source, database) => {
+    console.log({ time, args, source, database });
+  });
+});
 app.get("/all", async (req, res) => {
   const posts = await client.get("posts");
   if (posts != null) {
