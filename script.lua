@@ -1,7 +1,16 @@
 local LOBBY = KEYS[1] -- Set
 local USER_ID = KEYS[2] -- String
 
-redis.call('SADD', LOBBY, USER_ID)
+local member 
+if redis.call("EXISTS", LOBBY) == 0 then
+	member = USER_ID..':owner'
+else
+	member = USER_ID..':member'
+end
+
+-- return member
+redis.call('SADD', LOBBY, member)
+
 
 if redis.call('SCARD', LOBBY) == 4 then
 	local members = table.concat(redis.call('SMEMBERS', LOBBY), ",")

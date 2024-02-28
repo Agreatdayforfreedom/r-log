@@ -25,14 +25,15 @@ app.use(express.json());
 app.post("/join/:lobby", async (req, res) => {
 	const { lobby } = req.params;
 
-	const response = await redis.createlobby(lobby, req.body.username);
-	if (response == 0) {
-		const allmembers = await redis.adduser(lobby, req.body.username);
-		res.json({
-			status: "OK",
-			allmembers,
-		});
-	}
+	// const response = await redis.createlobby(lobby, req.body.username);
+	// if (response == 0) {
+	console.log(lobby, req.body.username);
+	const allmembers = await redis.adduser(lobby, req.body.username);
+	res.json({
+		status: "OK",
+		allmembers,
+	});
+	// }
 });
 
 app.listen(3000, () => {
