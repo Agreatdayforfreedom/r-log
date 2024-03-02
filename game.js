@@ -1,6 +1,7 @@
 import Redis from "ioredis";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 import express from "express";
 
@@ -13,35 +14,47 @@ redis.defineCommand("adduser", {
 	),
 });
 
-redis.defineCommand("createlobby", {
-	numberOfKeys: 2,
+redis.defineCommand("updateLeaderboard", {
+	numberOfKeys: 3,
 	lua: fs.readFileSync(
-		path.dirname(fileURLToPath(import.meta.url)) + "/lobby.lua"
+		path.dirname(fileURLToPath(import.meta.url)) + "/leaderboard.lua"
 	),
 });
 
 app.use(express.json());
-
 app.post("/join/:lobby", async (req, res) => {
+	let randomWinner = Math.floor(Math.random() * 4);
 	const { lobby } = req.params;
 
-	// const response = await redis.createlobby(lobby, req.body.username);
-	// if (response == 0) {
-	console.log(lobby, req.body.username);
-	const allmembers = await redis.adduser(lobby, req.body.username);
+	const allmembers = await redis.adduser(
+		lobby,
+		req.body.username,
+		crypto.randomUUID()
+	);
+	if (allmembers.length === 1) {
+		return res.json({
+			status: "OK",
+			allmembers,
+		});
+	}
+	let members = allmembers[1].split(",");
+
+	let winner = members[randomWinner];
+	let score = Math.ceil(Math.random() * 100).toString();
+	console.log({ members, winner, score });
+	const leaderboard = await redis.updateLeaderboard(
+		"duels_scores",
+		winner,
+		score
+	);
+	console.log({ leaderboard });
+
 	res.json({
 		status: "OK",
-		allmembers,
+		leaderboard,
 	});
-	// }
 });
 
 app.listen(3000, () => {
 	console.log("server running");
 });
-// (async () => {
-// const [gid, players] = await redis.adduser(LOBBY, GAME, "tlhunter");
-// console.log("GAME ID", gid, "PLAYERS", players.split(","));
-// redis.quit();
-// console.log(await redis.adduser(LOBBY, GAME, "cindy")); // null
-// })();
